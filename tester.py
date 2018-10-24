@@ -45,25 +45,24 @@ def RMSE(y_predicted, y_true):
 	return rmse
 
 ##############################################################################
+"""Sigmoid Activation Funciton"""
 def sigmoid(x):
 	return 1/(1+np.exp(-x))
 
-
 ##############################################################################
+"""Write benchmark data to .csv file"""
 def write_csv_file(filename, the_headers, the_values):
 	print("Writing to...",filename)
-	the_data_writer, _ = f01_get_default_CSV_writer(filename)
-
-
+	the_data_writer, output_file = get_default_CSV_writer(filename)
 	the_data_writer.writerow(the_headers)
 	for i in range(the_values.shape[0]):
 		the_data_writer.writerow(the_values[i])
+	if output_file is not None: # Close the written file
+		output_file.close()
 
 ##############################################################################
-def f01_get_default_CSV_writer(filename):
-
+def get_default_CSV_writer(filename):
 	output_file = open(filename, 'w')
-
 	csv.register_dialect(
                     'mydialect',
                     delimiter = ',',
@@ -72,11 +71,11 @@ def f01_get_default_CSV_writer(filename):
                     skipinitialspace = True,
                     lineterminator = '\n',
                     quoting = csv.QUOTE_MINIMAL)
+	the_data_writer = csv.writer(output_file, dialect='mydialect')
+	return the_data_writer, output_file
 
-	thedatawriter = csv.writer(output_file, dialect='mydialect')
-
-	return thedatawriter, output_file
 ##############################################################################
+"""Shuffle the dataset"""
 def shuffle_in_unison(a, b):
     assert len(a) == len(b)
     shuffled_a = np.empty(a.shape, dtype=a.dtype)
@@ -88,64 +87,65 @@ def shuffle_in_unison(a, b):
     return shuffled_a, shuffled_b
 
 ##############################################################################
-
+"""ReLu activation function"""
 def ReLU(x):
 	y = np.zeros(x.shape)
 	y[:] = x[:]
-	y[y <= 0] = 0
+	y[y <= 0] = 0 # entries is smaller than zero make them zero
 	return y
 
 ##############################################################################
+"""LReLu activation function"""
+# TODO: add alpah to argument
 def LReLU(x):
-
 	y = np.zeros(x.shape)
 	y[:] = x[:]
-	y[x <= 0] = 0.01*x[x <= 0]
-
+	alpha = 0.01 # define the slope where x < 0
+	y[x <= 0] = alpha*x[x <= 0]
 	return y
-##############################################################################
-def two_dec_digs(x):
 
+##############################################################################
+"""Keep two decimal places"""
+def two_dec_digs(x): # numpy array
 	y = 100.0*x
 	y = np.rint(y)
 	y = y / 100.0
-
 	return y
+
 ##############################################################################
+"""Return the cube-root of an array, element-wise"""
 def to_the_power_of_one_third(x):
 	y = np.cbrt(x)
-
 	return y
 
 ##############################################################################
+"""Sin function"""
 def sine_func(x):
 	y = np.sin(x)
-
 	return y
+
 ##############################################################################
+"""Natural logarithm"""
 def log_func(x):
 	y = np.zeros(x.shape)
 	y = np.log(x)
 	y[np.isnan(y)] = 0.0
-
 	return y
-##############################################################################
 
-def double_threshold(x):
+##############################################################################
+"""Numbers not in the range [-1, 1] set to 0.0, in the range set to 1.0"""
+def double_threshold(x): # NOT USED
 	y = np.zeros(x.shape)
 	y[:] = 1.0
-	#y[x < -1.0] = 0.01 * x[x < -1.0]
-	#y[x > 1.0] = -0.01 * x[x > 1.0]
 	y[x < -1.0] = 0.0
 	y[x > 1.0] = 0.0
-
 	return y
 
-
 ##############################################################################
+"""To get the derivative of sigmoid
+   d(sigmoid)/dx = sigmoid * inverse_sigmoid"""
 def inverse_sigmoid(x):
 	return 1.0 - (1/(1+np.exp(-x)))
-
 
 ##############################################################################
 def myAUC(y_predicted, y_true):

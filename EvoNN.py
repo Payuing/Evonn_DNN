@@ -6,7 +6,7 @@ import math
 import csv
 import warnings
 warnings.filterwarnings("ignore") # never print matching warnings
-sys.path.append("/Users/Payu/Desktop/EvoNN_package/EvoNN_DNN") #thrid parties' libarary, absolute path
+sys.path.append("/Users/Payu/Desktop/EvoNN_package/EvoNN_DNN") #thrid party's libararies, absolute path
 
 import numpy as np
 import random
