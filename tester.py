@@ -32,6 +32,11 @@ from math import sqrt
 import random
 import numpy as np
 
+"""Constant"""
+EPS = 1.0E-15
+EVOLVER = True
+STANDARD = True
+
 random.seed(1) # Initialize internal state of the random number generator
 np.random.seed(1)
 
@@ -89,7 +94,7 @@ def shuffle_in_unison(a, b):
 ##############################################################################
 """ReLu activation function"""
 def ReLU(x):
-	y = np.zeros(x.shape)
+	y = np.zeros(x.shape) # x has numpy arra
 	y[:] = x[:]
 	y[y <= 0] = 0 # entries is smaller than zero make them zero
 	return y
@@ -148,81 +153,53 @@ def inverse_sigmoid(x):
 	return 1.0 - (1/(1+np.exp(-x)))
 
 ##############################################################################
+"""Calculate AUC accuracy
+   The closer to -1, the better"""
 def myAUC(y_predicted, y_true):
-
-	#one_d_y_predicted = np.zeros((y_predicted.shape[0], ))
-	#one_d_y_true = np.zeros((y_true.shape[0], ))
-
 	one_d_y_predicted = y_predicted[:, 0]
 	one_d_y_true = y_true[:, 0]
-
-	#print(one_d_y_predicted.shape)
-	#print(one_d_y_true.shape)
-
-	#print(one_d_y_predicted)
-	#print(one_d_y_true)
-
-	#for i in range(y_predicted.shape[0]):
-	#	one_d_y_true[i] = y_true[i][0]
-	#	one_d_y_predicted[i] = y_predicted[i][0]
-
 	result = roc_auc_score(one_d_y_true, one_d_y_predicted)
-
-	#print(result)
-
 	return -1.0 * result
+
 ##############################################################################
+"""Multi-class logarithmic loss funciton per class"""
 def multiclass_LOGLOSS(y_predicted, y_true):
 	logloss_value = 0.0
-	#print(y_predicted, "\n", y_true)
-
-	#exit()
 	for i in range(y_predicted.shape[0]):
 		for j in range(y_predicted.shape[1]):
-			considered_value = min(max(y_predicted[i][j], 1.0E-15), 1.0-1.0E-15)
+			considered_value = min(max(y_predicted[i][j], EPS), 1.0-EPS)
 			logloss_value +=  y_true[i][j]* math.log(considered_value)
 
 	logloss_value *= -(1.0/y_predicted.shape[0])
 	return logloss_value
 
-
 ##############################################################################
-def linearmax(final_layer_values):
-
+"""Linear max"""
+def linearmax(final_layer_values): # NOTE: NOT USED
 	new_layer_values = np.zeros(final_layer_values.shape)
-	for i in range(new_layer_values.shape[0]):
-		x = final_layer_values[i]
-		min_value = np.amin(x)
+	for i in range(new_layer_values.shape[0]): # row
+		x = final_layer_values[i] # get one row
+		min_value = np.amin(x) # minimum entry in one row
 
-		shiftx = x - min_value
-		value_sum = np.sum(shiftx)
-		new_layer_values[i][:] = shiftx / value_sum
-
-
+		shiftx = x - min_value # shift to left
+		value_sum = np.sum(shiftx) # sum row
+		new_layer_values[i][:] = shiftx / value_sum # range [0,1]
 	return new_layer_values
 
 ##############################################################################
+"""Softmax"""
 def softmax(final_layer_values):
-
-	#print(final_layer_values)
-	#exit()
-
 	new_layer_values = np.zeros(final_layer_values.shape)
 	for i in range(new_layer_values.shape[0]):
 		x = final_layer_values[i]
 		shiftx = x - np.max(x) # Since we are using an exponent, this is equivalent to dividing. Comes from https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
-		#shiftx = x
-
 		exponent_layer_values = np.exp(shiftx)
 		sum_of_values = np.sum(exponent_layer_values)
 		new_layer_values[i] = exponent_layer_values/sum_of_values
-
-	#print(new_layer_values)
 	return new_layer_values
 
-
 ##############################################################################
-
+"""Load dataset""""
 if (dataset_letter == "a"):
 	print("Loading iris...")
 	dataset = load_iris()
@@ -235,21 +212,22 @@ elif (dataset_letter == "c"):
 elif (dataset_letter == "d"):
 	print("Loading digits...")
 	dataset = load_digits()
+#elif (dataset_letter == "e"):
+#	print("Loading breast cancer...")
+#	dataset = load_breast_cancer()
 elif (dataset_letter == "e"):
-	print("Loading breast cancer...")
-	dataset = load_breast_cancer()
-elif (dataset_letter == "f"):
 	print("Loading wine...")
 	dataset = load_wine()
 else:
-	print("Select either a, b, c, d, e")
+	print("Select either a(Iris), b(Brease Cancer), c(Diabetes), d(Digits), e(Wine)")
 	exit()
 
-
+##############################################################################
+"""X is feature map, Y is ground truth"""
 X = dataset.data
 Y = dataset.target
 
-
+"""Normlize the dataset in the range [-1, 1]""""
 for i in range(X.shape[1]):
 	largest_value = np.amax(X[:, i])
 	smallest_value = np.amin(X[:, i])
@@ -259,17 +237,15 @@ for i in range(X.shape[1]):
 	else:
 		X[:, i] /= max(largest_value, abs(smallest_value))
 
-EVOLVER = True
-STANDARD = True
-
+"""Set macro and initilization"""
 evo_pairs = []
 standard_pairs = []
 
 evo_logloss = []
 standard_logloss = []
 
-shuffle_number = 20
-rep_number = 10
+shuffle_number = 20 # column
+rep_number = 10 # row
 
 evo_runtimes = []
 standard_runtimes = []
@@ -279,84 +255,74 @@ standard_headers = []
 evo_measurements = np.zeros((rep_number, shuffle_number))
 standard_measurements = np.zeros((rep_number, shuffle_number))
 
-
-for a in range(shuffle_number):
+for a in range(shuffle_number): # a is shuffle time
 
 	evo_headers.append("shuffle #"+str(a+1))
 	standard_headers.append("shuffle #"+str(a+1))
 	X, Y = shuffle_in_unison(X, Y)
 
 	sample_size = Y.shape[0]
-	class_array = ['a','b','d','e','f']
+	class_array = ['a','b','d','e']
 	if (dataset_letter in class_array):
 		myType = 'classification'
-		class_number = np.max(Y)+1
+		class_number = np.max(Y)+1 # number of classification
 
 		Y_classes = np.zeros((sample_size, class_number))
 		for i in range(sample_size):
 			j = Y[i]
-			Y_classes[i][j] = 1.0
+			Y_classes[i][j] = 1.0 # ground truth
 	else:
 		myType = 'regression'
 		largest_value = np.amax(Y[:])
 		smallest_value = np.amin(Y[:])
-		Y_classes = Y/max(largest_value, abs(smallest_value))
-
+		Y_classes = Y/max(largest_value, abs(smallest_value)) # ground truth
 
 	print("X is a",X.shape[0],"X",X.shape[1],"matrix")
-	if (len(Y_classes.shape) > 1):
+	if (len(Y_classes.shape) == 2):
 		print("Y is a",Y_classes.shape[0],"X",Y_classes.shape[1],"matrix")
 	else:
 		print("Y is a",Y_classes.shape[0],"X 1 matrix")
 
-	train_index = int(sample_size*0.6)
-	validate_index = int(sample_size*0.8)
+	train_index = int(sample_size*0.6) # 60% trainning data
+	validate_index = int(sample_size*0.8) # 20% validation data
 
+	"""Separate to train, valid, and test set"""
 	X_train, Y_train = X[:train_index], Y_classes[:train_index]
 	X_valid, Y_valid = X[train_index:validate_index], Y_classes[train_index:validate_index]
 	X_test, Y_test = X[validate_index:], Y_classes[validate_index:]
 
-
-
-
 	for i in range(rep_number):
-		#print("\ti = ",i)
 		myRep = i+(a*rep_number)
-		print("\trep = ",myRep)
-		if (EVOLVER == True):
-
+		if (EVOLVER == True): # Trainning the evolve net
 			start_time = time.process_time()
-
-
-
 
 			if (myType == 'classification'):
 				final_function = softmax
-				#final_function = linearmax
 				fitness = multiclass_LOGLOSS
 				if (dataset_letter == 'e'):
 					fitness = myAUC
 			elif (myType == 'regression'):
-				#final_function = sigmoid
 				final_function = two_dec_digs
 				fitness = RMSE
 
-			myEvoNNEvolver = EvoNN.Evolver(	G=10000,
-											early_stopping=200,
-											MU=50,			# the number of parents
-											LAMBDA=50,		# the number of offspring
-											P_m=0.01,		#0.1
-											P_mf=0.01,		#0.1
-											R_m=0.1,		#1.0
-											P_c=0.3,		#0.3
-											elitism=True,
-											tournament_size=2,	#5
+			myEvoNNEvolver = EvoNN.Evolver(	G=10000,						# Maximum iteration
+											early_stopping=200,				# Minimum iteration
+											node_per_layer = [10]			# Number of nodes per layer
+											MU=50,							# Number of parents
+											LAMBDA=50,						# Number of offspring
+											P_m=0.01,						# Weight mutation probability
+											P_mf=0.01,						# Function mutation probablity
+											R_m=0.1,						# Weight mutation radius
+											P_c=0.3,						# Crossover proportion
+											P_b=0.01,						# Bias mutation probability
+											R_b=0.1							# Bias mutation radius
+											elitism=True,					# Elitism involves copying a small proportion of the fittest candidates, unchanged, into the next generation.
+											tournament_size=2,				# Selecting individuals from a population
 											fitness_function=fitness,
 											final_activation_function=final_function,
-											additional_functions=[LReLU, ReLU], #double_threshold],
+											additional_functions=[LReLU, ReLU],
 											random_state=myRep,
 											verbose=0)
-			#myEvoNNEvolver.fit(X_train, Y_train)
 			myEvoNNEvolver.fit(X_train, Y_train, X_valid, Y_valid)
 			if (myType == 'classification'):
 				evo_Y_pred_probabilities = myEvoNNEvolver.predict_proba(X_test)
@@ -448,25 +414,4 @@ if (EVOLVER == True):
 	evo_filename = my_directory+dataset_letter+"_evo_results.csv"
 	write_csv_file(evo_filename, evo_headers, evo_measurements)
 
-
-'''	evo_pairs.append((evo_logloss_mean, evo_logloss_std))
-	standard_pairs.append((standard_logloss_mean, standard_logloss_std))
-
-
-print("evo pairs\t\t\t\tstandard pairs")
-for i in range(len(evo_pairs)):
-	print(evo_pairs[i][0],"+/-",evo_pairs[i][1],"\t",standard_pairs[i][0],"+/-",standard_pairs[i][1])
-
-if (EVOLVER == True):
-	pass
-	#
-
-if (STANDARD == True):
-	pass
-
-
-#myEvoNN = EvoNN.EvoNN(feature_number,2)
-
-
-#print(y)'''
 print("Done")
