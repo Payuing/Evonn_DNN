@@ -171,14 +171,12 @@ class Evolver:
 		print("ran for ",curr_generation_number,"generations")
 
 	######################################################################################
-	""""NOT USED"""
+	""""Predict on test dataset"""
 	def predict_proba(self, X_test):
-
 		return self.best_individual.get_output(X_test)
 
-
     ######################################################################################
-	"""NOT USED"""
+	"""Predict on test dataset"""
 	def predict(self, X_test):
 		return self.best_individual.get_output(X_test)
 
@@ -561,7 +559,7 @@ class EvoNN:
 
 		hidden_layer_matrix = np.copy(hidden_layer_input) # deep copy
 		if (self.hidden_layer_size > 1):
-			for i in range(self.hidden_layer_size - 1):
+			for i in range(self.hidden_layer_size - 1): # aw+b
 				hidden_layer_matrix = np.dot(hidden_layer_matrix, self.hidden_to_hidden_matrix[i]) + np.tile(self.hidden_layer_bias[i+1],(sample_size, 1)) # y = wx+b
 				# z = f(wx+b)
 				for j in range(hidden_layer_matrix.shape[1]):

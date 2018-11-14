@@ -7,7 +7,8 @@ import time
 import math
 import csv
 import EvoNN
-import standardNN
+#import standardNN
+import FNN
 import csv
 import warnings
 warnings.filterwarnings("ignore")
@@ -244,8 +245,8 @@ standard_pairs = []
 evo_logloss = []
 standard_logloss = []
 
-shuffle_number = 20 # column
-rep_number = 10 # row
+shuffle_number = 20 # column; config here to reduce running time
+rep_number = 10 # row; config here to reduce running time
 
 evo_runtimes = []
 standard_runtimes = []
@@ -337,10 +338,12 @@ for a in range(shuffle_number): # a is shuffle time
 			elif (myType == 'regression'):
 				evo_my_logloss = RMSE(evo_Y_pred_probabilities,
                                                       Y_test)
+
 			elapsed_time = time.process_time() - start_time
 			evo_runtimes.append(elapsed_time)
-			evo_logloss.append(evo_my_logloss)
+			evo_logloss.append(evo_my_logloss) # the lower the better
 
+			# benchmark
 			evo_logloss_arr = np.array(evo_logloss)
 			evo_logloss_mean = np.mean(evo_logloss_arr)
 			evo_logloss_std = np.std(evo_logloss_arr)
@@ -353,20 +356,43 @@ for a in range(shuffle_number): # a is shuffle time
 
 			evo_avg = np.mean(evo_runtimes)
 			evo_SD = np.std(evo_runtimes)
-
 			print("evo NN runtime per cycle = ",evo_avg,"+/-",evo_SD)
 
 		if (STANDARD == True):
-
 			start_time = time.process_time()
-			myNN = standardNN.standardNN(	early_stopping=200,
-											epoch=10000,
-											random_state=myRep,
-											type = myType,
-											verbose=0)
-			myNN.fit(X_train, Y_train, X_valid, Y_valid)
+
+			#myNN = standardNN.standardNN(	early_stopping=200,
+			#								epoch=10000,
+			#								node_per_layer = [10],			# Number of nodes per layer
+			#								random_state=myRep,
+			#								type = myType,
+			#								verbose=0)
+			net_fnn = FNN.Network(
+				sizes=[X_train.shape[1],10,Y_train.shape[1]], # number of neurons in the respecitve layer of the network
+				type=myType
+			)
+			#myNN.fit(X_train, Y_train, X_valid, Y_valid)
+			# format data represntation
+			training_inputs = [np.reshape(x, (X_train.shape[1], 1)) for x in X_train]
+			training_results = [np.reshape(y, (Y_train.shape[1], 1)) for y in Y_train]
+			training_data = zip(training_inputs, training_results)
+
+			validation_inputs = [np.reshape(x, (X_valid.shape[1], 1)) for x in X_valid]
+			validation_results = [np.reshape(y, (Y_train.shape[1], 1)) for y in Y_valid]
+			validation_data = zip(validation_inputs, validation_results)
+
+			test_inputs = [np.reshape(x, (X_test.shape[1], 1)) for x in X_test]
+			test_results = [np.reshape(y, (Y_test.shape[1], 1)) for y in Y_test]
+			test_data = zip(test_inputs, test_results)
+			net_fnn.SGD(training_data,
+						epochs=30,
+						mini_batch_size=10,
+						eta=3.0							# learning rate
+						test_data=validation_data
+			)
+
 			if (myType == 'classification'):
-				standard_Y_pred_probabilities = myNN.predict_proba(X_test)
+				standard_Y_pred_probabilities = net_fnn.predict_proba(test_data)
 				if (dataset_letter == 'e'):
 					standard_my_logloss = myAUC(standard_Y_pred_probabilities, Y_test)
 					if (standard_my_logloss > -0.5):
@@ -374,8 +400,12 @@ for a in range(shuffle_number): # a is shuffle time
 				else:
 					standard_my_logloss = multiclass_LOGLOSS(standard_Y_pred_probabilities, Y_test)
 			else:
-				standard_Y_pred = myNN.predict(X_test)
-				standard_my_logloss = RMSE(standard_Y_pred, Y_test)
+				standard_Y_pred_probabilities = net_fnn.predict_proba(test_data)
+				for i in range (standard_Y_pred_probabilities.shape[0]):
+					max_index = np.argmax(standard_Y_pred_probabilities[i])
+					standard_Y_pred_probabilities[i][:] = 0
+					standard_Y_pred_probabilities[i][max_index] = 1.0
+				standard_my_logloss = RMSE(standard_Y_pred_probabilities, Y_test)
 
 			elapsed_time = time.process_time() - start_time
 			standard_runtimes.append(elapsed_time)
@@ -387,27 +417,23 @@ for a in range(shuffle_number): # a is shuffle time
 
 			standard_measurements[i][a] = standard_my_logloss
 
-			print("standard logloss",standard_logloss_mean,"+/-",standard_logloss_std)
+			print("standard logloss {} +/- {}".format(standard_logloss_mean, standard_logloss_std))
 			print(standard_logloss_arr)
 
 			standard_avg = np.mean(standard_runtimes)
 			standard_SD = np.std(standard_runtimes)
 
-			print("standard NN runtime per cycle = ",standard_avg,"+/-",standard_SD)
+			print("standard NN runtime per cycle = {} +/- {}".format(standard_avg, standard_SD))
 
 if (STANDARD == True) and (EVOLVER == True):
-	W, p_value = scipy.stats.wilcoxon(	x = evo_logloss_arr,
-										y = standard_logloss_arr)
-
-	print("p_value is",p_value)
-
+	W, p_value = wilcoxon(x = evo_logloss_arr,
+							y = standard_logloss_arr)
+	print("p_value is {}".format(p_value))
 
 if (STANDARD == True):
 	standard_headers = np.array(standard_headers)
 	standard_filename = my_directory+dataset_letter+"_standard_results.csv"
 	write_csv_file(standard_filename, standard_headers, standard_measurements)
-
-
 
 if (EVOLVER == True):
 	evo_headers = np.array(evo_headers)
