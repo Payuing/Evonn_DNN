@@ -2,15 +2,14 @@
 A module to implement the SGD for a feedforward neural network.
 Gradients are calculated using backpropagation.
 """
-
+from __future__ import absolute_import
+from __future__ import print_function
 import random
 import numpy as np
 import math
 import csv
 import sys
 
-from __future__ import absolute_import
-from __future__ import print_function
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
@@ -99,7 +98,7 @@ class Network(object):
             else:
                 print("Epoch {} completes".format_map(j))
 
-    def update_mini_batch(self. mini_batch, eta):
+    def update_mini_batch(self, mini_batch, eta):
         """
         Update the network's weights and biases by applying gradient descent using backpropagation
         to a single batch.

@@ -41,7 +41,10 @@ STANDARD = True
 random.seed(1) # Initialize internal state of the random number generator
 np.random.seed(1)
 
-dataset_letter = sys.argv[1] # Choose which dataset to use
+if len(sys.argv) > 1:
+	dataset_letter = sys.argv[1] # Choose which dataset to use
+else:
+	dataset_letter = "a"
 my_directory = sys.argv[0].replace("tester.py","") # get directory
 
 ########################################################
@@ -200,7 +203,7 @@ def softmax(final_layer_values):
 	return new_layer_values
 
 ##############################################################################
-"""Load dataset""""
+"""Load dataset"""
 if (dataset_letter == "a"):
 	print("Loading iris...")
 	dataset = load_iris()
@@ -228,7 +231,7 @@ else:
 X = dataset.data
 Y = dataset.target
 
-"""Normlize the dataset in the range [-1, 1]""""
+"""Normlize the dataset in the range [-1, 1]"""
 for i in range(X.shape[1]):
 	largest_value = np.amax(X[:, i])
 	smallest_value = np.amin(X[:, i])
@@ -245,8 +248,8 @@ standard_pairs = []
 evo_logloss = []
 standard_logloss = []
 
-shuffle_number = 20 # column; config here to reduce running time
-rep_number = 10 # row; config here to reduce running time
+shuffle_number = 4 #20 # column; config here to reduce running time
+rep_number = 2 #10 # row; config here to reduce running time
 
 evo_runtimes = []
 standard_runtimes = []
@@ -287,7 +290,7 @@ for a in range(shuffle_number): # a is shuffle time
 	train_index = int(sample_size*0.6) # 60% trainning data
 	validate_index = int(sample_size*0.8) # 20% validation data
 
-	"""Separate to train, valid, and test set"""
+	# Separate to train, valid, and test set
 	X_train, Y_train = X[:train_index], Y_classes[:train_index]
 	X_valid, Y_valid = X[train_index:validate_index], Y_classes[train_index:validate_index]
 	X_test, Y_test = X[validate_index:], Y_classes[validate_index:]
@@ -307,16 +310,16 @@ for a in range(shuffle_number): # a is shuffle time
 				fitness = RMSE
 
 			myEvoNNEvolver = EvoNN.Evolver(	G=10000,						# Maximum iteration
-											early_stopping=200,				# Minimum iteration
-											node_per_layer = [10]			# Number of nodes per layer
-											MU=50,							# Number of parents
-											LAMBDA=50,						# Number of offspring
+											early_stopping=20,				# Minimum iteration, no use for now
+											node_per_layer = [10],		# Number of nodes per layer
+											MU=10,							# Number of parents
+											LAMBDA=10,						# Number of offspring
 											P_m=0.01,						# Weight mutation probability
 											P_mf=0.01,						# Function mutation probablity
 											R_m=0.1,						# Weight mutation radius
 											P_c=0.3,						# Crossover proportion
 											P_b=0.01,						# Bias mutation probability
-											R_b=0.1							# Bias mutation radius
+											R_b=0.1,						# Bias mutation radius
 											elitism=True,					# Elitism involves copying a small proportion of the fittest candidates, unchanged, into the next generation.
 											tournament_size=2,				# Selecting individuals from a population
 											fitness_function=fitness,
@@ -325,19 +328,26 @@ for a in range(shuffle_number): # a is shuffle time
 											random_state=myRep,
 											verbose=0)
 			myEvoNNEvolver.fit(X_train, Y_train, X_valid, Y_valid)
-			if (myType == 'classification'):
-				evo_Y_pred_probabilities = myEvoNNEvolver.predict_proba(X_test)
-			else:
-				evo_Y_pred_probabilities = myEvoNNEvolver.predict(X_test)
 
 			if (myType == 'classification'):
+				print("This is classification.")
+				evo_Y_pred_probabilities = myEvoNNEvolver.predict_proba(X_test)
 				if (dataset_letter == 'e'):
 					evo_my_logloss = myAUC(evo_Y_pred_probabilities, Y_test)
 				else:
 					evo_my_logloss = multiclass_LOGLOSS(evo_Y_pred_probabilities, Y_test)
-			elif (myType == 'regression'):
-				evo_my_logloss = RMSE(evo_Y_pred_probabilities,
-                                                      Y_test)
+			else:
+				print("This is regression.")
+				evo_Y_pred_probabilities = myEvoNNEvolver.predict(X_test)
+				evo_my_logloss = RMSE(evo_Y_pred_probabilities, Y_test)
+
+			#if (myType == 'classification'):
+			#	if (dataset_letter == 'e'):
+			#		evo_my_logloss = myAUC(evo_Y_pred_probabilities, Y_test)
+			#	else:
+			#		evo_my_logloss = multiclass_LOGLOSS(evo_Y_pred_probabilities, Y_test)
+			#elif (myType == 'regression'):
+			#	evo_my_logloss = RMSE(evo_Y_pred_probabilities, Y_test)
 
 			elapsed_time = time.process_time() - start_time
 			evo_runtimes.append(elapsed_time)
@@ -358,6 +368,7 @@ for a in range(shuffle_number): # a is shuffle time
 			evo_SD = np.std(evo_runtimes)
 			print("evo NN runtime per cycle = ",evo_avg,"+/-",evo_SD)
 
+"""
 		if (STANDARD == True):
 			start_time = time.process_time()
 
@@ -424,7 +435,8 @@ for a in range(shuffle_number): # a is shuffle time
 			standard_SD = np.std(standard_runtimes)
 
 			print("standard NN runtime per cycle = {} +/- {}".format(standard_avg, standard_SD))
-
+"""
+"""
 if (STANDARD == True) and (EVOLVER == True):
 	W, p_value = wilcoxon(x = evo_logloss_arr,
 							y = standard_logloss_arr)
@@ -441,3 +453,4 @@ if (EVOLVER == True):
 	write_csv_file(evo_filename, evo_headers, evo_measurements)
 
 print("Done")
+"""

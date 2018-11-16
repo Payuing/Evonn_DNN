@@ -36,7 +36,7 @@ class Evolver:
 	def __init__(	self,
 					G=10,								# Maximum iteration
 					early_stopping=10,					# Minimum iteration
-					node_per_layer = [10]				# Number of nodes per layer
+					node_per_layer = [10],				# Number of nodes per layer
 					MU=10,								# Number of parents
 					LAMBDA=10,							# Number of offspring
 					P_m=0.1,							# Weight mutation probability
@@ -44,7 +44,7 @@ class Evolver:
 					R_m=1.0,							# Weight mutation radius
 					P_c=0.5,							# Crossover proportion
 					P_b=0.01,							# Bias mutation probablity
-					R_b=1.0								# Bias mutation radius
+					R_b=1.0,								# Bias mutation radius
 					elitism=True,						# Elitism involves copying a small proportion of the fittest candidates, unchanged, into the next generation.
 					tournament_size=2,					# Selecting individuals from a population
 					fitness_function=RMSE,
@@ -113,6 +113,8 @@ class Evolver:
 		#validate_timer = 0
 		curr_generation_number = 1
 		while ((curr_generation_number < self.generation_number + 1)): # and (self.early_stopping > validate_timer)):
+			if (curr_generation_number % 100 == 0):
+				print("run for ",curr_generation_number,"generations")
 			if (self.verbose >= 1):
 				printout_statement = "Generation "+str(curr_generation_number)
 				printout_statement += "\tTrain "
@@ -156,10 +158,10 @@ class Evolver:
 					best_fitness_validate_of_all_generations = best_fitness_validate
 					best_individual_validate = copy.deepcopy(best_individual)
 					#validate_timer = 0
-				else:
-					#validate_timer += 1
-					print("Please specify validate set.")
-					exit()
+			else:
+				#validate_timer += 1
+				print("Please specify validate set.")
+				exit()
 
 			curr_generation_number += 1
 
@@ -168,7 +170,6 @@ class Evolver:
 		if (self.verbose >= 1):
 			print(self.best_individual)
 
-		print("ran for ",curr_generation_number,"generations")
 
 	######################################################################################
 	""""Predict on test dataset"""
@@ -201,7 +202,7 @@ class Evolver:
 		for i in range(self.mu):
 			theIndividual = EvoNN.newIndividual(self.feature_number, self.output_number, self.final_activation, hidden_size = self.node_per_layer, function_dictionary = self.functions)
 			my_population.append(theIndividual) # theIndividual is a standalone network
-			if (self.verbose >= 1)
+			if (self.verbose >= 1):
 				print("\t\t\t {}".format(my_population[i]))
 
 		if (self.verbose >= 1):
@@ -416,8 +417,10 @@ class EvoNN:
 		num_hidden_layers = len(hidden_size)
 
 		# generate offspring arch
+		theIndividual.hidden_layer_size  = copy.deepcopy(hidden_size)
 		theIndividual.hidden_layer = []
 		theIndividual.hidden_layer_bias = []
+		theIndividual.hidden_layer_functions = []
 		for node_size in hidden_size:
 			theIndividual.hidden_layer.append(np.zeros(node_size)) # need this?
 			theIndividual.hidden_layer_bias.append(np.zeros(node_size))
@@ -457,7 +460,7 @@ class EvoNN:
 				probablity_matrix = np.random.uniform(size=(hidden_size[curr_layer], hidden_size[curr_layer + 1]))
 
 				new_hidden_to_hidden_matrix[probablity_matrix <= 0.5] = individual1.hidden_to_hidden_matrix[curr_layer][probablity_matrix <= 0.5]
-				new_hidden_to_hidden_matrix[probablity_matrix > 0.5] = individual2.hidden_to_hidden_matrix[probablity_matrix > 0.5]
+				new_hidden_to_hidden_matrix[probablity_matrix > 0.5] = individual2.hidden_to_hidden_matrix[curr_layer][probablity_matrix > 0.5]
 
 				theIndividual.hidden_to_hidden_matrix.append(new_hidden_to_hidden_matrix)
 
@@ -468,6 +471,7 @@ class EvoNN:
 		theIndividual.hidden_to_output_matrix[probablity_matrix <= 0.5] = individual1.hidden_to_output_matrix[probablity_matrix <= 0.5]
 		theIndividual.hidden_to_output_matrix[probablity_matrix > 0.5] = individual2.hidden_to_output_matrix[probablity_matrix > 0.5]
 
+		print("Offspring has {} layers".format(theIndividual.hidden_layer_size))
 		return theIndividual
 
 ##########################################################################################
@@ -558,8 +562,8 @@ class EvoNN:
 			hidden_layer_input[:, i] = myFunction(hidden_layer_input[:, i])
 
 		hidden_layer_matrix = np.copy(hidden_layer_input) # deep copy
-		if (self.hidden_layer_size > 1):
-			for i in range(self.hidden_layer_size - 1): # aw+b
+		if (len(self.hidden_layer_size) > 1):
+			for i in range(len(self.hidden_layer_size) - 1): # aw+b
 				hidden_layer_matrix = np.dot(hidden_layer_matrix, self.hidden_to_hidden_matrix[i]) + np.tile(self.hidden_layer_bias[i+1],(sample_size, 1)) # y = wx+b
 				# z = f(wx+b)
 				for j in range(hidden_layer_matrix.shape[1]):
