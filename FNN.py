@@ -59,7 +59,7 @@ class Network(object):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
-        self.weights = [np.random.radn(y, x)
+        self.weights = [np.random.randn(y, x)
                             for x, y in zip(sizes[:-1], sizes[1:])] # the ordering make it easy to cal wa+b
         self.type = type
         if (self.type != 'regression') and (self.type != 'classification'):
@@ -73,10 +73,10 @@ class Network(object):
     def feedforward(self, a):
         """Return the output of the network"""
         for b, w in zip(self.biases, self.weights):
-            a = sigmoid(np,dot(w, a) + b)
+            a = sigmoid(np.dot(w, a) + b)
         return a
 
-    def SGD(self, training_data, epochs, mini_batch_size, eta, test_data=None):
+    def SGD(self, training_data, epochs, mini_batch_size, eta, test_data=None, test_data_len=None, verbose=1):
         """
         Training the network using stochastic gradient descent.
         "training_data" is a list of tuples of numpy array; x is training inputs and y is the desired outputs.
@@ -93,10 +93,11 @@ class Network(object):
                 for k in range(0, n, mini_batch_size)]
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
-            if test_data:
-                print("Epoch {}: {} / {}".format(j, self.evaluate(test_data), n_test))
-            else:
-                print("Epoch {} completes".format_map(j))
+            if ((j+1)%10 == 0) & (verbose == 1):
+                if test_data:
+                    print("Epoch {}: {} / {}".format(j+1, self.evaluate(test_data), n_test))
+                else:
+                    print("Epoch {} completes".format_map(j))
 
     def update_mini_batch(self, mini_batch, eta):
         """

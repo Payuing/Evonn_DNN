@@ -35,7 +35,7 @@ import numpy as np
 
 """Constant"""
 EPS = 1.0E-15
-EVOLVER = True
+EVOLVER = False
 STANDARD = True
 
 random.seed(1) # Initialize internal state of the random number generator
@@ -297,6 +297,7 @@ for a in range(shuffle_number): # a is shuffle time
 
 	for i in range(rep_number):
 		myRep = i+(a*rep_number)
+
 		if (EVOLVER == True): # Trainning the evolve net
 			start_time = time.process_time()
 
@@ -311,7 +312,7 @@ for a in range(shuffle_number): # a is shuffle time
 
 			myEvoNNEvolver = EvoNN.Evolver(	G=10000,						# Maximum iteration
 											early_stopping=20,				# Minimum iteration, no use for now
-											node_per_layer = [10],		# Number of nodes per layer
+											node_per_layer = [10,10,10,10,10],		# Number of nodes per layer
 											MU=10,							# Number of parents
 											LAMBDA=10,						# Number of offspring
 											P_m=0.01,						# Weight mutation probability
@@ -368,7 +369,6 @@ for a in range(shuffle_number): # a is shuffle time
 			evo_SD = np.std(evo_runtimes)
 			print("evo NN runtime per cycle = ",evo_avg,"+/-",evo_SD)
 
-"""
 		if (STANDARD == True):
 			start_time = time.process_time()
 
@@ -386,20 +386,21 @@ for a in range(shuffle_number): # a is shuffle time
 			# format data represntation
 			training_inputs = [np.reshape(x, (X_train.shape[1], 1)) for x in X_train]
 			training_results = [np.reshape(y, (Y_train.shape[1], 1)) for y in Y_train]
-			training_data = zip(training_inputs, training_results)
+			training_data = list(zip(training_inputs, training_results))
 
 			validation_inputs = [np.reshape(x, (X_valid.shape[1], 1)) for x in X_valid]
 			validation_results = [np.reshape(y, (Y_train.shape[1], 1)) for y in Y_valid]
-			validation_data = zip(validation_inputs, validation_results)
+			validation_data = list(zip(validation_inputs, validation_results))
 
 			test_inputs = [np.reshape(x, (X_test.shape[1], 1)) for x in X_test]
 			test_results = [np.reshape(y, (Y_test.shape[1], 1)) for y in Y_test]
-			test_data = zip(test_inputs, test_results)
-			net_fnn.SGD(training_data,
-						epochs=30,
+			test_data = list(zip(test_inputs, test_results))
+			net_fnn.SGD(training_data=training_data,
+						epochs=300,
 						mini_batch_size=10,
-						eta=3.0							# learning rate
-						test_data=validation_data
+						eta=3.0,							# learning rate
+						test_data=validation_data,
+						verbose=0
 			)
 
 			if (myType == 'classification'):
@@ -435,8 +436,8 @@ for a in range(shuffle_number): # a is shuffle time
 			standard_SD = np.std(standard_runtimes)
 
 			print("standard NN runtime per cycle = {} +/- {}".format(standard_avg, standard_SD))
-"""
-"""
+
+
 if (STANDARD == True) and (EVOLVER == True):
 	W, p_value = wilcoxon(x = evo_logloss_arr,
 							y = standard_logloss_arr)
@@ -453,4 +454,3 @@ if (EVOLVER == True):
 	write_csv_file(evo_filename, evo_headers, evo_measurements)
 
 print("Done")
-"""

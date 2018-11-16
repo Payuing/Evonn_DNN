@@ -15,6 +15,9 @@ sys.path.append("/Users/Payu/Desktop/EvoNN_package/EvoNN_DNN") #thrid party's li
 # TODO: remove it later
 HIDDEN_LAYER_1_SIZE = [10] # node per layer, one layer for now
 
+# Assertion test number of layers
+NUM_LAYERS = 5
+
 """Activation function"""
 def sigmoid(x):
 	return 1/(1+np.exp(-x))
@@ -83,7 +86,7 @@ class Evolver:
 		for additional_function in additional_functions:
 			self.functions[key] = additional_function
 			key += 1
-
+		print("Network has {} layers, they are {}.".format(len(self.node_per_layer), self.node_per_layer))
     ######################################################################################
 	"""Train the EvoNN"""
 	def fit(self, X_train, Y_train, X_val = None, Y_val = None):
@@ -113,7 +116,7 @@ class Evolver:
 		#validate_timer = 0
 		curr_generation_number = 1
 		while ((curr_generation_number < self.generation_number + 1)): # and (self.early_stopping > validate_timer)):
-			if (curr_generation_number % 100 == 0):
+			if (curr_generation_number % 1000 == 0):
 				print("run for ",curr_generation_number,"generations")
 			if (self.verbose >= 1):
 				printout_statement = "Generation "+str(curr_generation_number)
@@ -292,10 +295,12 @@ class Evolver:
 			parent1 = self.tournament_selection(the_population)
 			parent2 = self.tournament_selection(the_population)
 			theIndividual = EvoNN.crossoverIndividual(parent1, parent2)
+			assert len(theIndividual.hidden_layer_size) == NUM_LAYERS # test number of layers
 			return theIndividual
 		else:
 			original = self.tournament_selection(the_population)
 			theIndividual = EvoNN.copyIndividual(original)
+			assert len(theIndividual.hidden_layer_size) == NUM_LAYERS # test number of layers
 			return theIndividual
 
     ######################################################################################
@@ -471,7 +476,7 @@ class EvoNN:
 		theIndividual.hidden_to_output_matrix[probablity_matrix <= 0.5] = individual1.hidden_to_output_matrix[probablity_matrix <= 0.5]
 		theIndividual.hidden_to_output_matrix[probablity_matrix > 0.5] = individual2.hidden_to_output_matrix[probablity_matrix > 0.5]
 
-		print("Offspring has {} layers".format(theIndividual.hidden_layer_size))
+		#print("Offspring has {} layers".format(theIndividual.hidden_layer_size))
 		return theIndividual
 
 ##########################################################################################
