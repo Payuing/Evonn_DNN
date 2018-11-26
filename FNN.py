@@ -31,7 +31,7 @@ def multiclass_LOGLOSS(y_predicted, y_true):
     logloss_value = 0.0
     for i in range(y_predicted.shape[0]):
         for j in range(y_predicted.shape[1]):
-            considered_value = min(max(y_predicted[i][j], 1.0E-15), 1.0-1.0E-15)# IEEE 754
+            considered_value = min(max(y_predicted[i][j], 1.0E-15), 1.0-1.0E-15) # IEEE 754
             logloss_value += y_true[i][j]*math.log(considered_value)
     logloss_value *= -(1.0/y_predicted.shape[0])
     return logloss_value
@@ -93,7 +93,7 @@ class Network(object):
                 for k in range(0, n, mini_batch_size)]
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
-            if ((j+1)%10 == 0) & (verbose == 1):
+            if ((j+1)%1000 == 0) & (verbose == 1):
                 if test_data:
                     print("Epoch {}: {} / {}".format(j+1, self.evaluate(test_data), n_test))
                 else:
