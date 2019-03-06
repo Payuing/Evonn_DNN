@@ -29,7 +29,7 @@ from sklearn.metrics import mean_squared_error
 
 """Constant"""
 EPS = 1.0E-15
-EVOLVER = True
+EVOLVER = False
 STANDARD = True
 ALPHA = 0.01 # define the slope where x < 0 in LReLu
 
@@ -39,7 +39,7 @@ np.random.seed(1)
 if len(sys.argv) > 1:
 	dataset_letter = sys.argv[1] # Choose which dataset to use
 else:
-	dataset_letter = "d"
+	dataset_letter = "a"
 my_directory = sys.argv[0].replace("tester.py","") # get directory
 
 ########################################################
@@ -250,7 +250,7 @@ for a in range(shuffle_number):
 				fitness = RMSE
 
 			myEvoNNEvolver = EvoNN.Evolver(	G=10000,						# Maximum iteration
-											early_stopping=50,				# Minimum iteration, no use for now
+											early_stopping=200,				# Minimum iteration, no use for now
 											node_per_layer = [ 10, 10, 10, 10, 10],		# Number of nodes per layer
 											MU=50,							# Number of parents
 											LAMBDA=50,						# Number of offspring
@@ -301,7 +301,7 @@ for a in range(shuffle_number):
 			start_time = time.process_time()
 
 			net_fnn = FNN.Network(
-				sizes=[X_train.shape[1],10,10,10,10,10,Y_train.shape[1]], # number of neurons in the respecitve layer of the network
+				sizes=[X_train.shape[1],10,Y_train.shape[1]], # number of neurons in the respecitve layer of the network
 				type=myType
 			)
 
@@ -321,7 +321,7 @@ for a in range(shuffle_number):
 			"""Train the network"""
 			net_fnn.SGD(training_data=training_data,
 						epochs=10000,
-						mini_batch_size=10,
+						mini_batch_size=2,
 						eta=1.0,							# learning rate
 						test_data=validation_data,
 						verbose=1

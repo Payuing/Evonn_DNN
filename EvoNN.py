@@ -114,7 +114,7 @@ class Evolver:
 
 		curr_generation_number = 1
 		while ((curr_generation_number < self.generation_number + 1) and (self.early_stopping > validate_timer)):
-			if (curr_generation_number % 1000 == 0):
+			if (curr_generation_number % 10 == 0):
 				print("run for {} generations".format(curr_generation_number))
 
 			if (self.verbose >= 1):
