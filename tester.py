@@ -12,6 +12,7 @@ import csv
 import warnings
 import random
 import numpy as np
+import evodnn_datasets
 warnings.filterwarnings("ignore")
 sys.path.append("/Users/Payu/Desktop/EvoNN_package/EvoNN_DNN") # thrid party's libararies, absolute path
 
@@ -39,7 +40,7 @@ np.random.seed(1)
 if len(sys.argv) > 1:
 	dataset_letter = sys.argv[1] # Choose which dataset to use
 else:
-	dataset_letter = "a"
+	dataset_letter = "1"
 my_directory = sys.argv[0].replace("tester.py","") # get directory
 
 ########################################################
@@ -148,7 +149,7 @@ def softmax(final_layer_values):
 	return new_layer_values
 
 ##############################################################################
-"""Load dataset"""
+"""
 if (dataset_letter == "a"):
 	print("Loading iris...")
 	dataset = load_iris()
@@ -165,13 +166,49 @@ elif (dataset_letter == "e"):
 	print("Loading wine...")
 	dataset = load_wine()
 else:
-	print("Select either a(Iris), b(Brease Cancer), c(Diabetes), d(Digits), e(Wine)")
+	print("Select datasets")
 	exit()
+"""
+
+if (dataset_letter == '1'):
+	"""
+	attributes: 8
+	instances: 4177
+	"""
+	X, Y = evodnn_datasets.load_abalone()
+elif (dataset_letter == '2'):
+	X, Y = evodnn_datasets.load_ecoli()
+elif (dataset_letter == '3'):
+	X, Y = evodnn_datasets.load_haberman()
+elif (dataset_letter == '4'):
+	X, Y = evodnn_datasets.load_ilpd()
+elif (dataset_letter == '5'):
+	X, Y = evodnn_datasets.load_lymphography()
+elif (dataset_letter == '6'):
+	X, Y = evodnn_datasets.load_mammographic()
+elif (dataset_letter == '7'):
+	X, Y = evodnn_datasets.load_spect()
+elif (dataset_letter == '8'):
+	X, Y = evodnn_datasets.load_spectf()
+elif(dataset_letter == '9'):
+	X, Y = evodnn_datasets.load_statlog()
+elif (dataset_letter == '10'):
+	X, Y = evodnn_datasets.load_thoracic()
+elif (dataset_letter == '11'):
+	X, Y = evodnn_datasets.load_tumor()
+elif (dataset_letter == '12'):
+	X, Y = evodnn_datasets.load_wilt()
+elif (dataset_letter == '13'):
+	X, Y = evodnn_datasets.load_yeast()
+else:
+	print("Select datasets")
+	exit()
+
 
 ##############################################################################
 """X is feature map, Y is ground truth"""
-X = dataset.data
-Y = dataset.target
+#X = dataset.data
+#Y = dataset.target
 
 """Normlize the dataset in the range [-1, 1]"""
 for i in range(X.shape[1]):
@@ -208,20 +245,21 @@ for a in range(shuffle_number):
 	X, Y = shuffle_in_unison(X, Y)
 
 	sample_size = Y.shape[0]
-	class_array = ['a','b','d','e']
-	if (dataset_letter in class_array):
-		myType = 'classification'
-		class_number = np.max(Y)+1 # number of classification
-		Y_classes = np.zeros((sample_size, class_number))
-		for i in range(sample_size):
-			j = Y[i]
-			Y_classes[i][j] = 1.0 # ground truth
+	#class_array = ['a','b','d','e','1']
+	#if (dataset_letter in class_array):
+	myType = 'classification'
+	class_number = np.max(Y)+1 # number of classification
+	Y_classes = np.zeros((sample_size, class_number))
+	for i in range(sample_size):
+		j = Y[i]
+		Y_classes[i][j] = 1.0 # ground truth
+	"""
 	else:
 		myType = 'regression'
 		largest_value = np.amax(Y[:])
 		smallest_value = np.amin(Y[:])
 		Y_classes = Y/max(largest_value, abs(smallest_value)) # ground truth
-
+	"""
 	print("X is a",X.shape[0],"X",X.shape[1],"matrix")
 	if (len(Y_classes.shape) == 2):
 		print("Y is a",Y_classes.shape[0],"X",Y_classes.shape[1],"matrix")
@@ -250,8 +288,8 @@ for a in range(shuffle_number):
 				fitness = RMSE
 
 			myEvoNNEvolver = EvoNN.Evolver(	G=10000,						# Maximum iteration
-											early_stopping=200,				# Minimum iteration, no use for now
-											node_per_layer = [ 10, 10, 10, 10, 10],		# Number of nodes per layer
+											early_stopping=100,				# Minimum iteration, no use for now
+											node_per_layer = [ 20, 20, 20, 20, 20],		# Number of nodes per layer
 											MU=50,							# Number of parents
 											LAMBDA=50,						# Number of offspring
 											P_m=0.01,						# Weight mutation probability
@@ -299,9 +337,8 @@ for a in range(shuffle_number):
 
 		if (STANDARD == True):
 			start_time = time.process_time()
-
 			net_fnn = FNN.Network(
-				sizes=[X_train.shape[1],10,Y_train.shape[1]], # number of neurons in the respecitve layer of the network
+				sizes=[X_train.shape[1], 20, 20, 20, 20, 20, Y_train.shape[1]], # number of neurons in the respecitve layer of the network
 				type=myType
 			)
 
@@ -321,7 +358,7 @@ for a in range(shuffle_number):
 			"""Train the network"""
 			net_fnn.SGD(training_data=training_data,
 						epochs=10000,
-						mini_batch_size=2,
+						mini_batch_size=10,
 						eta=1.0,							# learning rate
 						test_data=validation_data,
 						verbose=1
